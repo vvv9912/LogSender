@@ -32,14 +32,14 @@ func main() {
 	}
 
 	//считать последнее событие из бд
-	db, err := sqlx.Open("postgres", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+	db, err := sqlx.Open("postgres", config.Get().DatabaseForLogDSN)
 	if err != nil {
-		log.Println(err)
+		logger.Log.Error("failed to open database", zap.Error(err))
 		return
 	}
 
 	if err := storage.Migrate(db); err != nil {
-		log.Fatalln("Create migrate, err:", err)
+		logger.Log.Fatal("failed to migrate", zap.Error(err))
 	}
 
 	s := storage.NewStorage(db)
@@ -53,7 +53,7 @@ func main() {
 	//проверяем файл нулевой ли
 	sizeFile, err := cons.SizeFile()
 	if err != nil {
-		log.Println(err)
+		logger.Log.Error("failed to get size file", zap.Error(err))
 		return
 	}
 
@@ -62,7 +62,7 @@ func main() {
 		for {
 			event, _, err := cons.ReadEvent()
 			if err != nil {
-				log.Println(err)
+				logger.Log.Error("failed to read event", zap.Error(err))
 				break
 			}
 			if event.Ts > LastLog.Ts {
@@ -98,7 +98,7 @@ func main() {
 			if err == io.EOF {
 				continue
 			}
-			log.Println(err)
+			logger.Log.Error("failed to read event", zap.Error(err))
 			return
 		}
 		//отправка события в бд
