@@ -44,12 +44,12 @@ func main() {
 		logger.Log.Fatal("failed to migrate", zap.Error(err))
 	}
 
-	//s := storage.NewStorage(db)
-
 	Service := service.NewService(db)
 
 	wg := sync.WaitGroup{}
-	readlogger := service.NewReadLog(cons, make(chan logger.LoggerMsg), &wg, time.Duration(5*time.Second), *Service)
+	//todo убрать в сервис
+
+	readlogger := service.NewReadLog(cons, make(chan logger.LoggerMsg), &wg, time.Duration(5*time.Second), 100, *Service)
 	readlogger.AddEventsToBuff(context.Background())
 	readlogger.WriteEvents(context.Background())
 	err = readlogger.ReadOldEvent(context.Background())

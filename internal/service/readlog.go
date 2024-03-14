@@ -17,17 +17,19 @@ type ReadLog struct {
 	wg        *sync.WaitGroup
 	ch        chan logger.LoggerMsg
 	timerSand time.Duration
+	sizeBuf   int
 	Service
 }
 
-func NewReadLog(consumer *fileutils.Consumer, ch chan logger.LoggerMsg, wg *sync.WaitGroup, timerSand time.Duration, Service Service) *ReadLog {
+func NewReadLog(consumer *fileutils.Consumer, ch chan logger.LoggerMsg, wg *sync.WaitGroup, timerSand time.Duration, sizeBuf int, Service Service) *ReadLog {
 	return &ReadLog{
 		consumer:  consumer,
-		buf:       make([]logger.LoggerMsg, 0, 100),
+		buf:       make([]logger.LoggerMsg, 0, sizeBuf),
 		mu:        sync.Mutex{},
 		wg:        wg,
 		ch:        ch,
 		timerSand: timerSand,
+		sizeBuf:   sizeBuf,
 		Service:   Service,
 	}
 }
@@ -139,7 +141,7 @@ func (r *ReadLog) AddEventsToBuff(ctx context.Context) {
 				r.wg.Add(1)
 				r.mu.Unlock()
 
-				if len(r.buf) >= 10 {
+				if len(r.buf) >= r.sizeBuf {
 					r.wg.Wait()
 				}
 			}
@@ -149,7 +151,7 @@ func (r *ReadLog) AddEventsToBuff(ctx context.Context) {
 
 func (r *ReadLog) WriteEvents(ctx context.Context) {
 	go func() {
-		timer := time.NewTicker(5 * time.Second)
+		timer := time.NewTicker(r.timerSand)
 		for {
 			select {
 			case <-ctx.Done():
