@@ -56,7 +56,8 @@ func (r *ReadLog) ReadOldEvent(ctx context.Context) error {
 				break
 			}
 			if event.Ts > LastLog.Ts {
-				//Отправка в бд
+
+				//отправка события в канал и в бд
 				r.ch <- logger.LoggerMsg{
 					Level:        event.Level,
 					Microservice: event.Microservice,
@@ -67,20 +68,6 @@ func (r *ReadLog) ReadOldEvent(ctx context.Context) error {
 					Fields:       event.Fields,
 					Error:        event.OriginalError,
 				}
-				//err = r.WriteEvent(context.TODO(), logger.LoggerMsg{
-				//	Level:        event.Level,
-				//	Microservice: event.Microservice,
-				//	Ts:           event.Ts,
-				//	Caller:       event.Caller,
-				//	Msg:          event.Msg,
-				//	IdLogger:     event.IdLogger,
-				//	Fields:       event.Fields,
-				//	Error:        event.OriginalError,
-				//})
-				//if err != nil {
-				//	logger.Log.Error("failed to write event", zap.Error(err))
-				//	//break
-				//}
 
 				break
 			} else if event.Ts == LastLog.Ts || event.IdLogger == LastLog.IdLogger {
@@ -108,7 +95,7 @@ func (r *ReadLog) ReadNewEvent(ctx context.Context) error {
 					logger.Log.Error("failed to read event", zap.Error(err))
 					return
 				}
-				//отправка события в бд
+				//отправка события в канал и в бд
 				r.ch <- logger.LoggerMsg{
 					Level:        event.Level,
 					Microservice: event.Microservice,
