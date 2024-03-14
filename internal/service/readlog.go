@@ -164,7 +164,7 @@ func (r *ReadLog) WriteEvents(ctx context.Context) {
 
 				err := r.WriteEventBuf(ctx, r.buf)
 				if err != nil {
-					//todo в случае если бд будет не доступно, сервис упадет
+					//todo в случае если бд будет не доступно, сервис упадет //горутина с передподключением и общим флагом отправки в бд?
 					r.mu.Unlock()
 					return
 				}
