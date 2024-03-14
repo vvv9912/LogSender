@@ -161,7 +161,7 @@ func (r *ReadLog) WriteEvents(ctx context.Context) {
 					r.mu.Unlock()
 					continue
 				}
-				logger.Log.CustomError("Write Log", map[string]interface{}{"count": len(r.buf)})
+
 				err := r.WriteEventBuf(ctx, r.buf)
 				if err != nil {
 					//todo в случае если бд будет не доступно, сервис упадет
