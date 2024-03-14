@@ -1,4 +1,4 @@
-package storage
+package service
 
 import (
 	"LogSender/internal/storage/postgres"
@@ -7,19 +7,19 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type SandLogger interface {
+type Database interface {
 	WriteEventBuf(ctx context.Context, event []logger.LoggerMsg) error
 	WriteEvent(ctx context.Context, event logger.LoggerMsg) error
 	ReadLastEvent(ctx context.Context) (*logger.LoggerMsg, error)
 	ReadLastEventMicroservice(ctx context.Context, nameMicroservice string) (*logger.LoggerMsg, error)
 }
 
-type Storage struct {
-	SandLogger
+type Service struct {
+	Database
 }
 
-func NewStorage(db *sqlx.DB) *Storage {
-	return &Storage{
-		SandLogger: postgres.NewSandLogger(db),
+func NewService(db *sqlx.DB) *Service {
+	return &Service{
+		Database: postgres.NewSandLogger(db),
 	}
 }

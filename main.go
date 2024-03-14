@@ -3,14 +3,16 @@ package main
 import (
 	"LogSender/internal/config"
 	"LogSender/internal/fileutils"
+	"LogSender/internal/service"
 	"LogSender/internal/storage"
 	"LogSender/logger"
 	"context"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
-	"io"
 	"log"
+	"sync"
+	"time"
 )
 
 func run() error {
@@ -26,7 +28,7 @@ func main() {
 		return
 	}
 
-	cons, err := fileutils.NewConsumer("log.txt")
+	cons, err := fileutils.NewConsumer(config.Get().PathFileLog)
 	if err != nil {
 		logger.Log.Error("failed to create consumer", zap.Error(err))
 	}
@@ -42,80 +44,21 @@ func main() {
 		logger.Log.Fatal("failed to migrate", zap.Error(err))
 	}
 
-	s := storage.NewStorage(db)
+	//s := storage.NewStorage(db)
 
-	LastLog, err := s.ReadLastEvent(context.TODO())
+	Service := service.NewService(db)
+
+	wg := sync.WaitGroup{}
+	readlogger := service.NewReadLog(cons, make(chan logger.LoggerMsg), &wg, time.Duration(5*time.Second), *Service)
+	readlogger.AddEventsToBuff(context.Background())
+	readlogger.WriteEvents(context.Background())
+	err = readlogger.ReadOldEvent(context.Background())
 	if err != nil {
-		logger.Log.Error("failed to read last event", zap.Error(err))
+		logger.Log.Error("failed to read old event", zap.Error(err))
 		return
 	}
 
-	//проверяем файл нулевой ли
-	sizeFile, err := cons.SizeFile()
-	if err != nil {
-		logger.Log.Error("failed to get size file", zap.Error(err))
-		return
-	}
-
-	if sizeFile != 0 {
-		// поиск последнего события
-		for {
-			event, _, err := cons.ReadEvent()
-			if err != nil {
-				logger.Log.Error("failed to read event", zap.Error(err))
-				break
-			}
-			if event.Ts > LastLog.Ts {
-				//Отправка в бд
-
-				err = s.WriteEvent(context.TODO(), logger.LoggerMsg{
-					Level:        event.Level,
-					Microservice: event.Microservice,
-					Ts:           event.Ts,
-					Caller:       event.Caller,
-					Msg:          event.Msg,
-					IdLogger:     event.IdLogger,
-					Fields:       event.Fields,
-					Error:        event.OriginalError,
-				})
-				if err != nil {
-					logger.Log.Error("failed to write event", zap.Error(err))
-					//break
-				}
-
-				break
-			} else if event.Ts == LastLog.Ts || event.IdLogger == LastLog.IdLogger {
-				//нашли ласт событие
-				break
-			}
-
-		}
-	}
-
-	for {
-		event, _, err := cons.ReadEvent()
-		if err != nil {
-			if err == io.EOF {
-				continue
-			}
-			logger.Log.Error("failed to read event", zap.Error(err))
-			return
-		}
-		//отправка события в бд
-		err = s.WriteEvent(context.TODO(), logger.LoggerMsg{
-			Level:        event.Level,
-			Microservice: event.Microservice,
-			Ts:           event.Ts,
-			Caller:       event.Caller,
-			Msg:          event.Msg,
-			IdLogger:     event.IdLogger,
-			Fields:       event.Fields,
-			Error:        event.OriginalError,
-		})
-		if err != nil {
-			logger.Log.Error("failed to write event", zap.Error(err))
-			return
-		}
-
-	}
+	readlogger.ReadNewEvent(context.Background())
+	ctx := context.Background()
+	<-ctx.Done()
 }

@@ -9,14 +9,14 @@ import (
 )
 
 type Event struct {
-	Level         string  `json:"level"`
-	Microservice  string  `json:"microservice"`
-	Ts            float64 `json:"ts"`
-	Caller        string  `json:"caller"`
-	Msg           string  `json:"msg"`
-	IdLogger      string  `json:"idLogger"`
-	Fields        string  `json:"fields"`
-	OriginalError string  `json:"error"`
+	Level         string                 `json:"level"`
+	Microservice  string                 `json:"microservice"`
+	Ts            float64                `json:"ts"`
+	Caller        string                 `json:"caller"`
+	Msg           string                 `json:"msg"`
+	IdLogger      string                 `json:"idLogger"`
+	Fields        map[string]interface{} `json:"fields,omitempty"`
+	OriginalError string                 `json:"error,omitempty"`
 }
 
 type Producer struct {

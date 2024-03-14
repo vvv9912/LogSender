@@ -9,14 +9,14 @@ import (
 )
 
 type LoggerMsg struct {
-	Level        string  `json:"level"`
-	Microservice string  `json:"microservice"`
-	Ts           float64 `json:"ts"`
-	Caller       string  `json:"caller"`
-	Msg          string  `json:"msg"`
-	IdLogger     string  `json:"idLogger"`
-	Fields       string  `json:"fields"`
-	Error        string  `json:"error"`
+	Level        string                 `json:"level"`
+	Microservice string                 `json:"microservice"`
+	Ts           float64                `json:"ts"`
+	Caller       string                 `json:"caller"`
+	Msg          string                 `json:"msg"`
+	IdLogger     string                 `json:"idLogger"`
+	Fields       map[string]interface{} `json:"fields"`
+	Error        string                 `json:"error,omitempty"`
 }
 
 // Log будет доступен всему коду как синглтон.
